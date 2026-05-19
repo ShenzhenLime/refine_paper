@@ -1,0 +1,194 @@
+# 🧬 keyan · 科研女娲
+
+> 经济学实证论文 Skill 生成工作台 —— 输入学者姓名 + 论文 PDF，自动蒸馏科研范式，生成可运行的 AI 科研助理。
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+---
+
+## 📖 这是什么？
+
+**keyan（科研女娲）** 是一个面向经济学研究的 AI Skill 生成系统。它的核心能力是：
+
+> 给定一位经济学家（或研究主题）的一批论文 PDF，自动提炼其研究范式，并生成一个专属的 `XXX-research-assistant` Skill。
+
+生成后的 Skill 可以直接在支持 Copilot 的 AI 编辑器中使用，辅助你进行：
+
+- 📄 论文阅读与结构化拆解
+- 🔍 选题诊断与研究方向定位
+- 📊 数据、变量与模型设计
+- 🧪 识别策略评估（DID / FE / IV / 事件研究 等）
+- 🛡️ 稳健性、机制与异质性检验设计
+- ✍️ 论文写作（Introduction、文献综述、结果解释）
+- 🎤 组会汇报与答辩 Q&A 准备
+- 👀 审稿人视角的批判性修改
+
+---
+
+## 🚀 快速开始（部署）
+
+### 前置条件
+
+| 项目 | 要求 |
+|---|---|
+| AI 编辑器 | VS Code + GitHub Copilot（或支持 Copilot Skill 的编辑器） |
+| Python | 3.9+（仅 PDF 解析脚本需要） |
+| MinerU API Token | [免费申请](https://mineru.net/apiManage)（PDF 精准解析用） |
+
+### 安装 Skills（推荐方式）
+
+在 AI 编辑器中，直接对 Copilot 说：
+
+> 帮我安装 https://github.com/ShenzhenLime/keyan 的 skills
+
+AI 会自动将仓库中的 Skill 文件配置到你的编辑器中，即刻可用。
+
+**触发词：** `科研女娲` `经济学家skill` `蒸馏经济学家` `生成科研助理` `批量读取论文` `论文工作台` `实证论文工作台`
+
+### 手动安装
+
+1. 克隆仓库：
+
+```bash
+git clone https://github.com/ShenzhenLime/keyan.git
+```
+
+2. 将 `SKILL.md` 和 `skills/` 目录复制到你 AI 编辑器的 skills 配置路径（如 VS Code 中为 `.github/copilot-instructions.md` 或 workspace 根目录的 skills 文件夹）。
+
+3. 重启编辑器即可使用。
+
+---
+
+## 🔄 工作流程
+
+本 Skill 包含 **6 个阶段**，从原始 PDF 到可运行的科研助理 Skill：
+
+```mermaid
+flowchart TD
+    A[📥 用户提供 PDF + 学者名] --> B[Phase 0: 入口分流 & 需求澄清]
+    B --> B2[Phase 0.6: MinerU PDF 解析]
+    B2 --> C[Phase 1: 论文筛选<br/>顶刊优先 + 近年为主]
+    C --> D[Phase 2: 单篇论文结构化拆解<br/>问题 / 数据 / 变量 / 模型 / 识别]
+    D --> E[Phase 3: 多篇论文共性提炼<br/>研究设计 / 写作范式 / 诚实边界]
+    E --> F[Phase 4: 生成 XXX-research-assistant Skill]
+    F --> G[Phase 5: 交付与持续更新]
+
+    style A fill:#e1f5fe
+    style G fill:#c8e6c9
+```
+
+### 各阶段说明
+
+| 阶段 | 做什么 | 产物 |
+|---|---|---|
+| **Phase 0** | 澄清需求（学者/主题/用途）+ PDF 预处理 | 结构化 Markdown 论文 |
+| **Phase 1** | 论文筛选（顶刊优先、时间覆盖、主题均衡） | `paper-selection.md` |
+| **Phase 2** | 单篇论文 13 维度拆解（X/Y/M、数据、模型、识别、写作DNA） | `paper-XXX.md` × N 篇 |
+| **Phase 3** | 跨论文共性提炼（稳定范式 / 倾向性模式） | `01-研究设计.md` `02-写作范式.md` `03-诚实边界.md` |
+| **Phase 4** | 组装生成可运行的 `XXX-research-assistant/SKILL.md` | 最终 Skill 文件 |
+| **Phase 5** | 交付说明 + 增量更新机制 | 持续维护 |
+
+> 📌 **PDF 解析**使用 [MinerU](https://mineru.net/) 精准解析 API，可将论文 PDF 转为结构化 Markdown（含公式、表格、图表）。
+
+---
+
+## 📂 目录结构
+
+```text
+keyan/
+├── SKILL.md                  ← 🧬 主 Skill（科研女娲工作台）
+├── README.md                 ← 📖 本文件
+├── scripts/
+│   └── 文件批量解析.py        ← 🔧 MinerU PDF 批量解析脚本
+├── skills/
+│   └── liguangzhong-research-assistant/
+│       ├── SKILL.md          ← 📦 示例：李广众科研助理 Skill（已生成）
+│       └── references/       ← 📋 中间产物（语料、拆解、综合）
+├── data/
+│   └── liguangzhong/
+│       └── paper/            ← 📄 李广众论文解析结果（已解析，可直接测试）
+└── test/
+    ├── pdf_paper/            ← 🧪 测试用原始 PDF（少量论文）
+    └── paper/                ← 🧪 测试用解析结果
+```
+
+---
+
+## 🧪 测试数据
+
+仓库中附带了两组测试数据，帮助你在不准备自己论文的情况下快速体验完整流程：
+
+### 1. 预解析数据（`data/liguangzhong/paper/`）
+
+李广众教授约 60 篇论文的 **MinerU 解析结果**（已转为 `full.md`），可直接用于 Phase 1-4 的论文筛选、拆解和 Skill 生成。
+
+**直接使用：** 对 Copilot 说「帮我基于 data/liguangzhong/paper 里的论文做一个李广众科研助理」。
+
+### 2. 原始 PDF 测试（`test/pdf_paper/`）
+
+少量原始 PDF 论文，用于测试 Phase 0.6 的 PDF 解析脚本。
+
+**使用方式：**
+
+```bash
+# 1. 先配置 MinerU Token（环境变量 M_TOKEN）
+# 2. 修改 scripts/文件批量解析.py 中的 PDF_DIR 和 OUT_DIR
+# 3. 运行
+python scripts/文件批量解析.py
+```
+
+### 3. 已生成 Skill（`skills/liguangzhong-research-assistant/`）
+
+基于 15 篇核心论文蒸馏出的完整科研助理 Skill，覆盖汇率与国际金融、公司金融、政府治理等领域，可作为生成其他学者 Skill 的参考模板。
+
+---
+
+## ⚙️ PDF 解析脚本配置
+
+`scripts/文件批量解析.py` 的关键配置项：
+
+| 配置项 | 说明 | 默认值 |
+|---|---|---|
+| `TOKEN` | MinerU API Token（从环境变量 `M_TOKEN` 读取） | 必填 |
+| `PDF_DIR` | PDF 文件夹绝对路径 | 需用户指定 |
+| `OUT_DIR` | 解析结果输出目录 | 需用户指定 |
+| `MODEL_VERSION` | 解析模型（`vlm` / `pipeline` / `MinerU-HTML`） | `vlm` |
+| `BATCH_MAX` | 单次批量上限 | 50 |
+| `POLL_TIMEOUT` | 轮询超时（秒） | 1800 |
+
+> ⚠️ 使用前请先到 [MinerU API 管理](https://mineru.net/apiManage) 申请 Token，并设为环境变量 `M_TOKEN`。
+
+---
+
+## 🎯 已生成的 Skill 示例
+
+| Skill 名称 | 学者 | 论文数 | 覆盖领域 |
+|---|---|---|---|
+| `liguangzhong-research-assistant` | 李广众 | 15 篇（精选自 ~60 篇） | 汇率与国际金融、公司金融与治理、政府治理与税收、法与金融、资本市场 |
+
+触发词示例：「李广众」「李广众论文」「按李广众的方式看这个选题」「用李广众 skill 帮我改论文」
+
+---
+
+## 🤝 贡献与扩展
+
+欢迎基于本项目蒸馏更多学者的科研助理 Skill：
+
+1. Fork 本仓库
+2. 准备目标学者的论文 PDF
+3. 运行 `scripts/文件批量解析.py` 解析 PDF
+4. 对 Copilot 说「基于这些论文生成 XXX 的科研助理 Skill」
+5. 提交 PR 将生成的 `skills/XXX-research-assistant/` 分享给社区
+
+---
+
+## 📜 License
+
+MIT License
+
+---
+
+## 🙏 致谢
+
+- [MinerU](https://mineru.net/) — PDF 精准解析
+- [GitHub Copilot](https://github.com/features/copilot) — AI Skill 运行环境
