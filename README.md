@@ -107,39 +107,29 @@ keyan/
 ├── data/
 │   └── liguangzhong/
 │       └── paper/            ← 📄 李广众论文解析结果（已解析，可直接测试）
-└── test/
-    ├── pdf_paper/            ← 🧪 测试用原始 PDF（少量论文）
-    └── paper/                ← 🧪 测试用解析结果
 ```
 
 ---
 
-## 🧪 测试数据
+## 📦 Python 外部包
 
-仓库中附带了两组测试数据，帮助你在不准备自己论文的情况下快速体验完整流程：
+PDF 解析脚本 `scripts/文件批量解析.py` 依赖以下外部包：
 
-### 1. 预解析数据（`data/liguangzhong/paper/`）
+| 包名 | 用途 |
+|---|---|
+| `requests` | HTTP 请求（MinerU API 调用、文件上传/下载） |
 
-李广众教授约 60 篇论文的 **MinerU 解析结果**（已转为 `full.md`），可直接用于 Phase 1-4 的论文筛选、拆解和 Skill 生成。
-
-**直接使用：** 对 Copilot 说「帮我基于 data/liguangzhong/paper 里的论文做一个李广众科研助理」。
-
-### 2. 原始 PDF 测试（`test/pdf_paper/`）
-
-少量原始 PDF 论文，用于测试 Phase 0.6 的 PDF 解析脚本。
-
-**使用方式：**
+### 安装方式
 
 ```bash
-# 1. 先配置 MinerU Token（环境变量 M_TOKEN）
-# 2. 修改 scripts/文件批量解析.py 中的 PDF_DIR 和 OUT_DIR
-# 3. 运行
-python scripts/文件批量解析.py
+pip install -r requirements.txt
 ```
 
-### 3. 已生成 Skill（`skills/liguangzhong-research-assistant/`）
+或直接安装：
 
-基于 15 篇核心论文蒸馏出的完整科研助理 Skill，覆盖汇率与国际金融、公司金融、政府治理等领域，可作为生成其他学者 Skill 的参考模板。
+```bash
+pip install requests
+```
 
 ---
 
