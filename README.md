@@ -35,45 +35,68 @@
 | Python | 3.9+（仅 PDF 解析脚本需要） |
 | MinerU API Token | [免费申请](https://mineru.net/apiManage)（PDF 精准解析用） |
 
-### ① 安装 Skills 到 AI 编辑器（推荐方式）
+### ① 安装到 AI 编辑器（推荐方式）
 
-在 AI 编辑器中，直接对 Copilot 说：
+本仓库本身就是一个完整的 Skill 文件夹。将它放入 AI 编辑器的 skills 目录即可使用：
 
-> 帮我安装 https://github.com/ShenzhenLime/keyan 仓库中的全部内容，包括 SKILL.md、skills/ 目录、scripts/文件批量解析.py、README.md 和 requirements.txt。把这些都放到一个文件夹中。
+| 编辑器 | Skills 目录路径 |
+|---|---|
+| VS Code + Copilot | 项目根目录下的 `.github/copilot/` 或 `.copilot/` |
+| OpenCode | `C:\Users\用户名\.config\opencode\skills\` |
 
-AI 会将完整仓库内容配置到你的编辑器中。
+**方式 A：让 AI 帮你安装**
 
-> ⚠️ 如果只说"安装 skills"，AI 可能只会复制 `SKILL.md` 和 `skills/`，漏掉 PDF 解析脚本和依赖文件。**请务必使用上面的完整提示词**，或参考下方"必须安装的完整文件清单"手动补全。
+在 AI 编辑器中，对 Copilot 说：
 
-**触发词：** `科研女娲` `经济学家skill` `蒸馏经济学家` `生成科研助理` `批量读取论文` `论文工作台` `实证论文工作台`
+> 帮我把 https://github.com/ShenzhenLime/keyan 整个仓库克隆下来，作为一个完整文件夹放到 skills 目录中。不要只复制 SKILL.md，要把整个 keyan/ 文件夹（含 scripts/、skills/、README.md、requirements.txt 等所有内容）都放进去。
 
-### ② 手动安装（推荐：一步到位）
-
-1. 克隆仓库：
+**方式 B：手动克隆到 skills 目录**
 
 ```bash
+# 以 OpenCode 为例
+cd C:\Users\27522\.config\opencode\skills
+git clone https://github.com/ShenzhenLime/keyan.git
+
+# VS Code + Copilot 示例
+cd 你的项目/.github/copilot
 git clone https://github.com/ShenzhenLime/keyan.git
 ```
 
-2. 将仓库中以下文件/目录复制到你 AI 编辑器的项目（或对应 skills 配置路径）：
+安装完成后，目录结构应为：
 
-| 必须安装 | 路径 | 用途 |
-|---|---|---|
-| ✅ | `SKILL.md` | 科研女娲主 Skill |
-| ✅ | `skills/` | 已生成的科研助理 Skill（如 `liguangzhong-research-assistant/`） |
-| ✅ | `scripts/文件批量解析.py` | MinerU PDF 批量解析脚本 |
-| ✅ | `requirements.txt` | Python 依赖清单（`pip install -r` 用） |
-| ✅ | `README.md` | 本说明文档（离线查阅） |
+```text
+skills/
+└── keyan/                    ← 整个仓库作为一个文件夹
+    ├── SKILL.md              ← 主 Skill（科研女娲工作台）
+    ├── README.md
+    ├── requirements.txt
+    ├── scripts/
+    │   └── 文件批量解析.py
+    └── skills/
+        └── liguangzhong-research-assistant/
+            ├── SKILL.md
+            └── references/
+```
 
-> 📌 在 VS Code 中，Skill 文件通常放在项目根目录或 `.github/copilot-instructions.md`。你也可以直接把整个 `keyan/` 仓库作为工作区打开，无需额外复制。
+> ⚠️ **关键**：是 `skills/keyan/SKILL.md`，不是 `skills/SKILL.md`。整个 keyan 仓库作为一个完整的 Skill 文件夹存在，而不是把 SKILL.md 单独拆出来放。
 
-3. 安装 Python 依赖：
+### ② 手动安装
+
+直接将整个仓库克隆到 AI 编辑器的 skills 目录下即可，无需挑选单个文件：
 
 ```bash
+# 进入你的 skills 目录（以 OpenCode 为例）
+cd C:\Users\27522\.config\opencode\skills
+
+# 克隆整个仓库
+git clone https://github.com/ShenzhenLime/keyan.git
+
+# 安装 Python 依赖（PDF 解析脚本需要）
+cd keyan
 pip install -r requirements.txt
 ```
 
-4. 配置 MinerU Token（见下方 ⚙️ 配置章节），重启编辑器即可使用。
+克隆后 skills 目录中会多出一个 `keyan/` 文件夹，内含全部文件。配置好 MinerU Token（见下方 ⚙️ 配置章节），重启编辑器即可使用。
 
 ---
 
@@ -112,17 +135,20 @@ flowchart TD
 
 ## 📂 目录结构
 
+安装后的目录结构（以 OpenCode 为例）：
+
 ```text
-keyan/
-├── SKILL.md                  ← 🧬 主 Skill（科研女娲工作台）
-├── README.md                 ← 📖 本文件
-├── scripts/
-│   └── 文件批量解析.py        ← 🔧 MinerU PDF 批量解析脚本
-├── skills/
-│   └── liguangzhong-research-assistant/
-│       ├── SKILL.md          ← 📦 示例：李广众科研助理 Skill（已生成）
-│       └── references/       ← 📋 中间产物（语料、拆解、综合）
-├── requirements.txt
+skills/
+└── keyan/                       ← 🧬 整个仓库作为一个 Skill 文件夹
+    ├── SKILL.md                 ← 主 Skill（科研女娲工作台）
+    ├── README.md                ← 📖 本文件
+    ├── requirements.txt         ← Python 依赖
+    ├── scripts/
+    │   └── 文件批量解析.py       ← 🔧 MinerU PDF 批量解析脚本
+    └── skills/
+        └── liguangzhong-research-assistant/
+            ├── SKILL.md         ← 📦 示例：李广众科研助理 Skill
+            └── references/      ← 📋 中间产物（语料、拆解、综合）
 ```
 
 ---
