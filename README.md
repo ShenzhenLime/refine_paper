@@ -39,7 +39,7 @@
 
 在 AI 编辑器中，直接对 Copilot 说：
 
-> 帮我安装 https://github.com/ShenzhenLime/keyan 仓库中的全部内容，包括 SKILL.md、skills/ 目录、scripts/文件批量解析.py、README.md 和 requirements.txt。把这些都放到当前工作区中。
+> 帮我安装 https://github.com/ShenzhenLime/keyan 仓库中的全部内容，包括 SKILL.md、skills/ 目录、scripts/文件批量解析.py、README.md 和 requirements.txt。把这些都放到一个文件夹中。
 
 AI 会将完整仓库内容配置到你的编辑器中。
 
