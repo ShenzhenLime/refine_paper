@@ -35,34 +35,31 @@
 | Python | 3.9+（仅 PDF 解析脚本需要） |
 | MinerU API Token | [免费申请](https://mineru.net/apiManage)（PDF 精准解析用） |
 
-### ① 安装到 AI 编辑器（推荐方式）
+### 安装方式
 
-本仓库本身就是一个完整的 Skill 文件夹。将它放入 AI 编辑器的 skills 目录即可使用：
+两种方式任选其一：
 
-| 编辑器 | Skills 目录路径 |
-|---|---|
-| VS Code + Copilot | 项目根目录下的 `.github/copilot/` 或 `.copilot/` |
-| OpenCode | `C:\Users\用户名\.config\opencode\skills\` |
+**方式一：跟 Agent 说一句话**
 
-**方式 A：让 AI 帮你安装**
-
-在 AI 编辑器中，对 Copilot 说：
+对 Copilot / Claude / Opencode 说：
 
 > 帮我把 https://github.com/ShenzhenLime/keyan 整个仓库克隆下来，作为一个完整文件夹放到 skills 目录中。不要只复制 SKILL.md，要把整个 keyan/ 文件夹（含 scripts/、skills/、README.md、requirements.txt 等所有内容）都放进去。
 
 **方式 B：手动克隆到 skills 目录**
 
 ```bash
-# 以 OpenCode 为例
+# 进入 skills 目录（以 OpenCode 为例）
 cd C:\Users\27522\.config\opencode\skills
-git clone https://github.com/ShenzhenLime/keyan.git
 
-# VS Code + Copilot 示例
-cd 你的项目/.github/copilot
+# 如果使用 VS Code + Copilot，则进入项目根目录的 .github/copilot/ 或 .copilot/
+# cd 你的项目/.github/copilot
+
 git clone https://github.com/ShenzhenLime/keyan.git
+cd keyan
+pip install -r requirements.txt
 ```
 
-安装完成后，目录结构应为：
+安装完成后目录结构：
 
 ```text
 skills/
@@ -78,25 +75,9 @@ skills/
             └── references/
 ```
 
-> ⚠️ **关键**：是 `skills/keyan/SKILL.md`，不是 `skills/SKILL.md`。整个 keyan 仓库作为一个完整的 Skill 文件夹存在，而不是把 SKILL.md 单独拆出来放。
+> ⚠️ 是 `skills/keyan/SKILL.md`，不是 `skills/SKILL.md`。整个仓库作为一个完整的 Skill 文件夹放进去。
 
-### ② 手动安装
-
-直接将整个仓库克隆到 AI 编辑器的 skills 目录下即可，无需挑选单个文件：
-
-```bash
-# 进入你的 skills 目录（以 OpenCode 为例）
-cd C:\Users\27522\.config\opencode\skills
-
-# 克隆整个仓库
-git clone https://github.com/ShenzhenLime/keyan.git
-
-# 安装 Python 依赖（PDF 解析脚本需要）
-cd keyan
-pip install -r requirements.txt
-```
-
-克隆后 skills 目录中会多出一个 `keyan/` 文件夹，内含全部文件。配置好 MinerU Token（见下方 ⚙️ 配置章节），重启编辑器即可使用。
+配置好 MinerU Token（见下方 ⚙️ 配置章节），重启编辑器即可使用。
 
 ---
 
