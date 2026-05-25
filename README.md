@@ -37,21 +37,41 @@
 
 ### 安装方式
 
-两种方式任选其一：
+三种方式任选其一：
 
-**方式一：跟 Agent 说一句话**
-
-对 Copilot / Claude / Opencode 说：
-
-> 帮我把 https://github.com/ShenzhenLime/keyan 整个仓库克隆下来，作为一个完整文件夹放到 skills 目录中。不要只复制 SKILL.md，要把整个 keyan/ 文件夹（含 scripts/、skills/、README.md、requirements.txt 等所有内容）都放进去。
-
-**方式 B：手动克隆到 skills 目录**
+**方式一：Claude Code（推荐 — 符号链接，修改即时生效）**
 
 ```bash
-# 进入 skills 目录（以 OpenCode 为例）
+# 1. 克隆到任意位置（或直接使用已有仓库）
+git clone https://github.com/ShenzhenLime/keyan.git
+
+# 2. 创建目录联结，放入 Claude Code 全局 skills 目录
+mkdir -p ~/.claude/skills
+# Windows PowerShell:
+New-Item -Path "$env:USERPROFILE\.claude\skills\keyan" -ItemType Junction -Target "你的keyan路径"
+# macOS / Linux:
+ln -s /path/to/keyan ~/.claude/skills/keyan
+
+# 3. 安装依赖
+cd keyan
+pip install -r requirements.txt
+```
+
+联结后，原目录和 `~/.claude/skills/keyan/` 双向同步，修改代码即时生效，无需复制。
+
+**方式二：跟 Agent 说一句话**
+
+对 Claude / Copilot 说：
+
+> 帮我把 https://github.com/ShenzhenLime/keyan 整个仓库克隆下来，放到你的全局 skills 目录中，创建一个目录联结指向它。不要只复制 SKILL.md，要把整个 keyan/ 文件夹都放进去。
+
+**方式三：手动克隆到 IDE skills 目录**
+
+```bash
+# OpenCode
 cd C:\Users\27522\.config\opencode\skills
 
-# 如果使用 VS Code + Copilot，则进入项目根目录的 .github/copilot/ 或 .copilot/
+# VS Code + Copilot → 项目根目录的 .github/copilot/ 或 .copilot/
 # cd 你的项目/.github/copilot
 
 git clone https://github.com/ShenzhenLime/keyan.git
@@ -63,16 +83,19 @@ pip install -r requirements.txt
 
 ```text
 skills/
-└── keyan/                    ← 整个仓库作为一个文件夹
-    ├── SKILL.md              ← 主 Skill（科研女娲工作台）
+└── keyan/                        ← 整个仓库作为一个 Skill 文件夹
+    ├── SKILL.md                  ← 主 Skill（科研女娲工作台）
     ├── README.md
     ├── requirements.txt
-    ├── scripts/
-    │   └── 文件批量解析.py
-    └── skills/
-        └── liguangzhong-research-assistant/
-            ├── SKILL.md
-            └── references/
+    ├── tools/
+    │   └── pdf_to_md.py           ← MinerU PDF 批量解析（Agent 友好 API）
+    ├── skills/
+    │   └── liguangzhong-research-assistant/
+    │       ├── SKILL.md          ← 示例：李广众科研助理 Skill
+    │       └── references/       ← 中间产物（语料、拆解、综合）
+    ├── data/                     ← 共享数据
+    ├── tools/                    ← 辅助工具脚本
+    └── test/                     ← 测试用例
 ```
 
 > ⚠️ 是 `skills/keyan/SKILL.md`，不是 `skills/SKILL.md`。整个仓库作为一个完整的 Skill 文件夹放进去。
@@ -124,19 +147,19 @@ skills/
     ├── SKILL.md                 ← 主 Skill（科研女娲工作台）
     ├── README.md                ← 📖 本文件
     ├── requirements.txt         ← Python 依赖
-    ├── scripts/
-    │   └── 文件批量解析.py       ← 🔧 MinerU PDF 批量解析脚本
-    └── skills/
-        └── liguangzhong-research-assistant/
-            ├── SKILL.md         ← 📦 示例：李广众科研助理 Skill
-            └── references/      ← 📋 中间产物（语料、拆解、综合）
+    ├── tools/
+    │   └── pdf_to_md.py       ← 🔧 MinerU PDF 批量解析（Agent 友好 API）
+    ├── skills/
+    │   └── liguangzhong-research-assistant/
+    │       ├── SKILL.md         ← 📦 示例：李广众科研助理 Skill
+    │       └── references/      ← 📋 中间产物（语料、拆解、综合）
 ```
 
 ---
 
 ## 📦 Python 外部包
 
-PDF 解析脚本 `scripts/文件批量解析.py` 依赖以下外部包：
+PDF 解析脚本 `tools/pdf_to_md.py` 依赖以下外部包：
 
 | 包名 | 用途 |
 |---|---|
@@ -156,18 +179,50 @@ pip install requests
 
 ---
 
-## ⚙️ PDF 解析脚本配置
+## ⚙️ PDF 解析脚本
 
-`scripts/文件批量解析.py` 的关键配置项：
+`tools/pdf_to_md.py` 已封装为 Agent 友好 API，同时保留 CLI 入口。
 
-| 配置项 | 说明 | 默认值 |
+### 方式一：CLI 调用
+
+```bash
+python tools/pdf_to_md.py --pdf-dir "C:/papers" --out-dir "C:/output"
+# 可选：--token <token>  --model vlm  --batch-max 50  --quiet
+```
+
+### 方式二：Agent / Python 代码调用（推荐）
+
+```python
+from pdf_to_md import parse_pdfs, parse_single_pdf
+
+# 批量解析整个文件夹
+results = parse_pdfs(pdf_dir="C:/papers", out_dir="C:/output")
+# 返回 list[dict]: pdf_name, status, output_dir, md_count, img_count, error
+
+# 单文件解析
+result = parse_single_pdf(pdf_path="C:/papers/xxx.pdf", out_dir="C:/output")
+```
+
+### 参数说明
+
+| 参数 | 说明 | 默认值 |
 |---|---|---|
-| `TOKEN` | MinerU API Token（从环境变量 `M_TOKEN` 读取） | 必填 |
-| `PDF_DIR` | PDF 文件夹绝对路径 | 需用户指定 |
-| `OUT_DIR` | 解析结果输出目录 | 需用户指定 |
-| `MODEL_VERSION` | 解析模型（`vlm` / `pipeline` / `MinerU-HTML`） | `vlm` |
-| `BATCH_MAX` | 单次批量上限 | 50 |
-| `POLL_TIMEOUT` | 轮询超时（秒） | 1800 |
+| `pdf_dir` / `pdf_path` | PDF 路径 | 必填 |
+| `out_dir` | 输出目录 | 必填 |
+| `token` | MinerU API Token（不传则读 `M_TOKEN` 环境变量） | `os.getenv("M_TOKEN")` |
+| `model_version` | 解析模型（`vlm` / `pipeline` / `MinerU-HTML`） | `vlm` |
+| `batch_max` | 单次批量上限（API 限制 50） | 50 |
+| `poll_interval` | 轮询间隔（秒） | 5 |
+| `poll_timeout` | 轮询超时（秒） | 1800 |
+| `verbose` | 是否打印进度 | True |
+
+### Agent 调用注意事项
+
+脚本头部已记录完整的踩坑经验，关键点：
+
+- **不要减小 `batch_max`**：200 个文件以内用默认 50 一把梭最稳，减小反而会导致分批过多被 shell 超时 kill
+- **429 重试即可**：遇到限流错误直接重跑，不是代码问题
+- **单文件先测连通性**：不确定 API 是否可用时先调 `parse_single_pdf`
 
 > ⚠️ 使用前请先到 [MinerU API 管理](https://mineru.net/apiManage) 申请 Token，并设为环境变量 `M_TOKEN`。
 
@@ -189,8 +244,11 @@ pip install requests
 
 1. Fork 本仓库
 2. 准备目标学者的论文 PDF
-3. 运行 `scripts/文件批量解析.py` 解析 PDF
-4. 对 Copilot 说「基于这些论文生成 XXX 的科研助理 Skill」
+3. 运行解析脚本：
+   ```bash
+   python tools/pdf_to_md.py --pdf-dir "<PDF文件夹>" --out-dir "<输出目录>"
+   ```
+4. 对 Claude / Copilot 说「基于这些论文生成 XXX 的科研助理 Skill」
 5. 提交 PR 将生成的 `skills/XXX-research-assistant/` 分享给社区
 
 ---
