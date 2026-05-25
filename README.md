@@ -61,9 +61,9 @@ pip install -r requirements.txt
 
 **方式二：跟 Agent 说一句话**
 
-对 Claude / Copilot 说：
+对 Claude / Copilot / Opencode 说：
 
-> 帮我把 https://github.com/ShenzhenLime/keyan 整个仓库克隆下来，放到你的全局 skills 目录中，创建一个目录联结指向它。不要只复制 SKILL.md，要把整个 keyan/ 文件夹都放进去。
+> 帮我把 https://github.com/ShenzhenLime/keyan 整个仓库克隆下来，作为一个完整文件夹放到 skills 目录中。不要只复制 SKILL.md，要把整个 keyan/ 文件夹（含 scripts/、skills/、README.md、requirements.txt 等所有内容）都放进去。
 
 **方式三：手动克隆到 IDE skills 目录**
 
