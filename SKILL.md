@@ -2,6 +2,7 @@
 name: keyan
 description: |
   经济学科研场景下的女娲式 Skill 工作台。输入某位经济学家、学者、导师、论文作者或研究主题，以及一批论文 PDF / 工作论文 / 项目书 / 讲稿 / 阅读笔记，自动执行本地语料分析、单篇论文拆解、多篇论文综合、研究范式提炼，并生成一个可运行的 XXX-research-assistant Skill。生成后的 Skill 内嵌经济学实证论文工作流，可辅助选题、文献综述、数据变量设计、模型与识别策略、稳健性/机制/异质性检验、论文写作、PPT 汇报和审稿式修改。
+  PDF 解析功能已独立为 pdf-parse skill（skills/pdf-parse/SKILL.md）。
   触发词：「科研女娲」「经济学家skill」「蒸馏经济学家」「蒸馏某位学者」「生成科研助理」「李广众skill」「基于这些论文做skill」「批量读取论文」「论文工作台」「实证论文工作台」「帮我从这些PDF里提炼研究范式」「做一个XX的科研助理」。
 ---
 
@@ -242,8 +243,8 @@ description: |
 如果你已经上传论文或其他材料，我会进入本地语料模式，优先基于这些论文提炼；如果没有材料，则只能先做轻量版本，质量会受限。
 
 ### 6. PDF 预处理
-你的 PDF 论文需要先通过 `scripts/文件批量解析.py`（MinerU 精准解析 API）转换为结构化 Markdown。
-详见 Phase 0.6。
+你的 PDF 论文需要先通过 `pdf-parse` skill（MinerU 精准解析 API）转换为结构化 Markdown。
+详见 Phase 0.6 和 skills/pdf-parse/SKILL.md。
 ```
 
 确认后进入 Phase 0.5，创建目录结构后立即进入 Phase 0.6 执行 PDF 解析。
@@ -471,133 +472,28 @@ description: |
 - [ ] 已创建 paper-list.md；
 - [ ] 已标注本地语料模式或轻量调研模式。
 
-> 下一步：进入 Phase 0.6，通过 `scripts/文件批量解析.py` 将 PDF 转换为结构化 Markdown。
+> 下一步：进入 Phase 0.6，调用 `pdf-parse` skill 将 PDF 转换为结构化 Markdown。
 
 ---
 
-# Phase 0.6：PDF 预处理 — MinerU 精准解析
-
-## 0.6.1 定位
+# Phase 0.6：PDF 预处理
 
 原始 PDF 论文无法直接被 SKILL 读取和分析。在进入 Phase 1 论文筛选之前，必须先将 PDF 批量转换为结构化 Markdown。
 
-本 SKILL 使用 `scripts/文件批量解析.py` 调用 MinerU 精准解析 API 完成此步骤。
+> **调用 `pdf-parse` skill 完成此步骤。** 详见 [skills/pdf-parse/SKILL.md](./skills/pdf-parse/SKILL.md)。
 
-**数据流：**
-
-```text
-PDF_DIR（用户提供）
-    │
-    ▼  scripts/文件批量解析.py
-    │   MinerU API v4 batch
-    │
-    ▼
-OUT_DIR（脚本自动创建）
-    ├── paper-001/
-    │   ├── full.md        ← SKILL 主要阅读对象
-    │   └── images/        ← 论文中的图表
-    ├── paper-002/
-    │   ├── full.md
-    │   └── images/
-    └── ...
-```
-
-## 0.6.2 前置条件：Token 配置
-
-该脚本通过环境变量 `M_TOKEN` 读取 MinerU API Token。
-
-**必须**在运行脚本前提醒用户完成以下操作：
-
-1. 前往 [MinerU API 管理](https://mineru.net/apiManage) 申请 Token；
-2. Windows：搜索"环境变量" → "编辑系统环境变量" → "环境变量" → 在"用户变量"中新建 `M_TOKEN`，值为你的 Token → 确定；
-3. 重启 VSCode 使环境变量生效。
-
-> 如果不想设环境变量，也可直接编辑脚本，将 `TOKEN = os.getenv('M_TOKEN')` 替换为 `TOKEN = "你的token字符串"`（不推荐，有泄露风险）。
-
-**推荐提醒模板：**
-
-```markdown
-⚠️ 在运行 PDF 解析之前，请先确认 MinerU Token 已配置。
-
-操作步骤：
-1. 在 https://mineru.net/apiManage 申请 API Token；
-2. Windows：搜索"环境变量" → "编辑系统环境变量" → "环境变量" → 新建用户变量 `M_TOKEN` = 你的 Token；
-3. 重启 VSCode，确认无误后告诉我，我会帮你运行解析脚本。
-```
-
-## 0.6.3 脚本配置说明
-
-`scripts/文件批量解析.py` 的关键配置项：
-
-| 配置项 | 位置 | 默认行为 | 用户可修改 |
-|---|---|---|---|
-| `TOKEN` | 脚本顶部 `本地必须配置区域` | 从环境变量 `M_TOKEN` 读取 | 可直接写死字符串 |
-| `PDF_DIR` | 脚本顶部 `本地必须配置区域` | 用户提供的 PDF 文件夹绝对路径 | ✅ 是 |
-| `OUT_DIR` | 脚本顶部 `本地必须配置区域` | 脚本自动创建，默认为 `data/<对象>/paper/` | ✅ 用户可指定其他路径 |
-| `MODEL_VERSION` | `可选配置区域` | `"vlm"`（推荐） | 可选 `pipeline` / `vlm` / `MinerU-HTML` |
-| `BATCH_MAX` | `可选配置区域` | `50`（API 限制） | 通常不需要改 |
-| `POLL_TIMEOUT` | `可选配置区域` | `1800` 秒（30 分钟） | 文件多可适当调大 |
-
-默认配置原则：
-- `PDF_DIR`：用户在 Phase 0A 中提供的 PDF 绝对路径；
-- `OUT_DIR`：脚本会在输出目录下按论文名自动创建子文件夹，无需用户手动创建；
-- 如果用户没有另外指定，使用默认配置即可。
-
-## 0.6.4 执行流程
-
-### Step 1：检查 PDF 文件
-
-确认 `PDF_DIR` 下存在 `.pdf` 文件。脚本会自动扫描：
-
-```python
-pdf_files = sorted(set(PDF_DIR.glob("*.pdf")) | set(PDF_DIR.glob("*.PDF")))
-```
-
-### Step 2：运行解析脚本
-
-在确认 Token 已配置后，在终端运行：
-
-```powershell
-python scripts/文件批量解析.py
-```
-
-或由助手代为执行。
-
-### Step 3：等待解析完成
-
-脚本会经历四个阶段：
-1. **获取上传链接** — 向 MinerU 申请批量上传 URL；
-2. **上传文件** — 将本地 PDF PUT 到预签名 URL；
-3. **轮询解析状态** — 每 5 秒查询一次，直到全部完成或超时；
-4. **下载并解压结果** — 每个 PDF 对应一个子文件夹，内含 `full.md` 和 `images/`。
-
-解析完成后，脚本会打印汇总：
-
-```text
-🎉 全部完成！成功: X, 失败/跳过: Y
-结果保存在: C:\...\data\<对象>\paper\
-```
-
-### Step 4：验证输出
-
-确认每个 PDF 对应的输出文件夹中存在 `full.md`。如果部分文件解析失败（状态 `failed`），脚本会跳过并报告原因，需人工检查原 PDF 是否损坏或格式不兼容。
-
-## 0.6.5 解析结果作为 SKILL 输入
+该 skill 会：
+1. 检查 MinerU Token（`M_TOKEN` 环境变量）是否已配置；
+2. 调用 `skills/pdf-parse/pdf_to_md.py` 将 PDF_DIR 中的论文批量转为结构化 Markdown；
+3. 输出 `full.md` + `images/` 到 OUT_DIR。
 
 解析完成后，`OUT_DIR` 中的 `full.md` 文件将成为 Phase 1 的语料来源。
 
-SKILL 会：
-1. 读取每个 `full.md` 的内容；
-2. 从中提取标题、作者、摘要、关键词、正文结构；
-3. 以这些结构化信息进入 Phase 1 论文筛选和 Phase 2 单篇拆解。
-
-## 0.6.6 完成检查
+### 完成检查
 
 进入 Phase 1 前必须确认：
 
-- [ ] `M_TOKEN` 已设置且有效；
-- [ ] `PDF_DIR` 已指向正确的 PDF 文件夹；
-- [ ] 脚本已成功运行并完成所有文件解析；
+- [ ] PDF 解析已完成（调用 `pdf-parse` skill）；
 - [ ] `OUT_DIR` 中每个 PDF 对应一个包含 `full.md` 的子文件夹；
 - [ ] 失败的 PDF 已记录，并判断是否影响语料覆盖度；
 - [ ] `OUT_DIR` 路径已记录，作为 Phase 1 论文筛选的语料来源。

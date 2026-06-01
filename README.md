@@ -63,7 +63,7 @@ pip install -r requirements.txt
 
 对 Claude / Copilot / Opencode 说：
 
-> 帮我把 https://github.com/ShenzhenLime/keyan 整个仓库克隆下来，作为一个完整文件夹放到 skills 目录中。不要只复制 SKILL.md，要把整个 keyan/ 文件夹（含 scripts/、skills/、README.md、requirements.txt 等所有内容）都放进去。
+> 帮我把 https://github.com/ShenzhenLime/keyan 整个仓库克隆下来，作为一个完整文件夹放到 skills 目录中。不要只复制 SKILL.md，要把整个 keyan/ 文件夹（含 skills/、README.md、requirements.txt 等所有内容）都放进去。
 
 **方式三：手动克隆到 IDE skills 目录**
 
@@ -87,14 +87,14 @@ skills/
     ├── SKILL.md                  ← 主 Skill（科研女娲工作台）
     ├── README.md
     ├── requirements.txt
-    ├── tools/
-    │   └── pdf_to_md.py           ← MinerU PDF 批量解析（Agent 友好 API）
     ├── skills/
+    │   ├── pdf-parse/            ← PDF 解析工具 Skill
+    │   │   ├── SKILL.md
+    │   │   └── pdf_to_md.py     ← MinerU PDF 批量解析
     │   └── liguangzhong-research-assistant/
     │       ├── SKILL.md          ← 示例：李广众科研助理 Skill
     │       └── references/       ← 中间产物（语料、拆解、综合）
     ├── data/                     ← 共享数据
-    ├── tools/                    ← 辅助工具脚本
     └── test/                     ← 测试用例
 ```
 
@@ -147,9 +147,10 @@ skills/
     ├── SKILL.md                 ← 主 Skill（科研女娲工作台）
     ├── README.md                ← 📖 本文件
     ├── requirements.txt         ← Python 依赖
-    ├── tools/
-    │   └── pdf_to_md.py       ← 🔧 MinerU PDF 批量解析（Agent 友好 API）
     ├── skills/
+    │   ├── pdf-parse/           ← 🔧 PDF 解析工具 Skill
+    │   │   ├── SKILL.md
+    │   │   └── pdf_to_md.py    ← MinerU PDF 批量解析
     │   └── liguangzhong-research-assistant/
     │       ├── SKILL.md         ← 📦 示例：李广众科研助理 Skill
     │       └── references/      ← 📋 中间产物（语料、拆解、综合）
@@ -159,7 +160,7 @@ skills/
 
 ## 📦 Python 外部包
 
-PDF 解析脚本 `tools/pdf_to_md.py` 依赖以下外部包：
+PDF 解析脚本 `skills/pdf-parse/pdf_to_md.py` 依赖以下外部包：
 
 | 包名 | 用途 |
 |---|---|
@@ -181,12 +182,12 @@ pip install requests
 
 ## ⚙️ PDF 解析脚本
 
-`tools/pdf_to_md.py` 已封装为 Agent 友好 API，同时保留 CLI 入口。
+`skills/pdf-parse/pdf_to_md.py` 已封装为 Agent 友好 API，同时保留 CLI 入口。
 
 ### 方式一：CLI 调用
 
 ```bash
-python tools/pdf_to_md.py --pdf-dir "C:/papers" --out-dir "C:/output"
+python skills/pdf-parse/pdf_to_md.py --pdf-dir "C:/papers" --out-dir "C:/output"
 # 可选：--token <token>  --model vlm  --batch-max 50  --quiet
 ```
 
@@ -246,7 +247,7 @@ result = parse_single_pdf(pdf_path="C:/papers/xxx.pdf", out_dir="C:/output")
 2. 准备目标学者的论文 PDF
 3. 运行解析脚本：
    ```bash
-   python tools/pdf_to_md.py --pdf-dir "<PDF文件夹>" --out-dir "<输出目录>"
+   python skills/pdf-parse/pdf_to_md.py --pdf-dir "<PDF文件夹>" --out-dir "<输出目录>"
    ```
 4. 对 Claude / Copilot 说「基于这些论文生成 XXX 的科研助理 Skill」
 5. 提交 PR 将生成的 `skills/XXX-research-assistant/` 分享给社区
