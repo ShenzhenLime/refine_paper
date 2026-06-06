@@ -2,6 +2,7 @@
 # Agent 调用指南
 # =============================================================================
 # 本脚本用于调用 MinerU API 批量解析 PDF 论文，生成结构化 Markdown。
+# 支持大文件自动拆分（单次上传限制 ≤ 200 页）。
 #
 # === 调用方式 ===
 #
@@ -17,27 +18,6 @@
 #
 #    result = parse_single_pdf(pdf_path="C:/papers/xxx.pdf", out_dir="C:/output")
 #    # 返回单个 dict，同上结构
-#
-# === 踩坑记录 ===
-#
-# 坑1：Windows GBK 编码不支持 emoji
-#   - 现象：UnicodeEncodeError: 'gbk' codec can't encode character
-#   - 解决：已将所有 emoji 替换为纯文本标签（[OK]/[FAIL]/[WARN]/[DONE] 等）
-#
-# 坑2：429 Too Many Requests
-#   - 现象：第一次请求时 API 返回 429
-#   - 原因：MinerU API 的瞬时限流，不是 batch 太大（API 支持 200 个文件）
-#   - 解决：直接重试即可，无需减小 batch_max
-#
-# 坑3：减小 batch_max 导致超时被 kill
-#   - 现象：用 --batch-max 5/10 分批跑，进程被 kill（exit 137）
-#   - 原因：多批后总耗时远超单批，达到 shell 超时上限
-#   - 解决：用默认 batch_max=50 一次性提交，31 个 PDF 约 2-3 分钟完成
-#   - 法则：200 个以内全部用 batch_max=50 一把梭，不要减小批次
-#
-# 坑4：先测单个文件验证连通性
-#   - 不确定 API 是否可用时，先调 parse_single_pdf 测一个最小的 PDF
-#   - 单个成功后直接全量跑
 # =============================================================================
 
 import requests
@@ -46,6 +26,7 @@ import zipfile
 import shutil
 import re
 from pathlib import Path
+from pypdf import PdfReader, PdfWriter
 import os
 
 BASE_URL = "https://mineru.net"
@@ -69,6 +50,46 @@ def _log(verbose: bool, msg: str):
         print(msg)
 
 
+def _error_result(pdf_name: str, error_msg: str) -> dict:
+    """创建标准错误结果"""
+    return {
+        "pdf_name": pdf_name, "status": "failed",
+        "output_dir": None, "md_count": 0, "img_count": 0, "error": error_msg,
+    }
+
+
+def _get_pdf_page_count(pdf_path: Path) -> int:
+    """获取 PDF 页数"""
+    return len(PdfReader(str(pdf_path)).pages)
+
+
+def _split_pdf(pdf_path: Path, max_pages: int = 200) -> list[Path]:
+    """将大 PDF 拆分为多个小文件，每个不超过 max_pages 页。
+
+    拆分文件保存到与原PDF同名的文件夹中。
+    """
+    if _get_pdf_page_count(pdf_path) <= max_pages:
+        return [pdf_path]
+
+    # 创建与原PDF同名的文件夹存放拆分文件
+    split_dir = pdf_path.parent / pdf_path.stem
+    split_dir.mkdir(exist_ok=True)
+
+    reader = PdfReader(str(pdf_path))
+    parts = []
+    for start in range(0, len(reader.pages), max_pages):
+        writer = PdfWriter()
+        for i in range(start, min(start + max_pages, len(reader.pages))):
+            writer.add_page(reader.pages[i])
+
+        part_path = split_dir / f"part_{start // max_pages + 1}.pdf"
+        with open(part_path, "wb") as f:
+            writer.write(f)
+        parts.append(part_path)
+
+    return parts
+
+
 def parse_single_pdf(
     pdf_path: str | Path,
     out_dir: str | Path,
@@ -78,18 +99,69 @@ def parse_single_pdf(
 ) -> dict:
     """解析单个 PDF，返回结构化结果。
 
+    大于 200 页的 PDF 会自动拆分并合并结果到同一文件夹。
     返回 dict: pdf_name, status("success"|"failed"), output_dir, md_count, img_count, error
     """
     pdf_path = Path(pdf_path)
     out_dir = Path(out_dir)
     token = token or os.getenv("M_TOKEN")
     if not token:
-        return {
-            "pdf_name": pdf_path.name, "status": "failed",
-            "output_dir": None, "md_count": 0, "img_count": 0,
-            "error": "未提供 token，请设置 M_TOKEN 环境变量或传入 token 参数",
-        }
+        return _error_result(pdf_path.name, "未提供 token，请设置 M_TOKEN 环境变量或传入 token 参数")
 
+    page_count = _get_pdf_page_count(pdf_path)
+    _log(verbose, f"[页数] {pdf_path.name}: {page_count} 页")
+    parts = _split_pdf(pdf_path, max_pages=200)
+    is_split = len(parts) > 1
+
+    if is_split:
+        _log(verbose, f"[拆分] {pdf_path.name} -> {len(parts)} 个部分")
+
+    save_dir = out_dir / pdf_path.stem
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    # 记录处理前的文件数量
+    existing_md_count = len(list(save_dir.glob("*.md")))
+    img_dir = save_dir / "images"
+    existing_img_count = len(list(img_dir.iterdir())) if img_dir.exists() else 0
+
+    temp_files = [p for p in parts if p != pdf_path]
+    errors = []
+
+    try:
+        for idx, part_path in enumerate(parts):
+            part_label = f" (part {idx + 1}/{len(parts)})" if is_split else ""
+            _log(verbose, f"\n[处理] {part_path.name}{part_label}")
+
+            result = _parse_single_pdf_internal(part_path, save_dir, token, model_version, verbose)
+
+            if result["status"] != "success":
+                errors.append(f"Part {idx + 1}: {result['error']}")
+    finally:
+        for temp_file in temp_files:
+            temp_file.unlink(missing_ok=True)
+
+    if errors:
+        return _error_result(pdf_path.name, "; ".join(errors))
+
+    # 计算新增数量
+    new_md_count = len(list(save_dir.glob("*.md"))) - existing_md_count
+    new_img_count = (len(list(img_dir.iterdir())) if img_dir.exists() else 0) - existing_img_count
+
+    return {
+        "pdf_name": pdf_path.name, "status": "success",
+        "output_dir": str(save_dir.absolute()),
+        "md_count": new_md_count, "img_count": new_img_count, "error": None,
+    }
+
+
+def _parse_single_pdf_internal(
+    pdf_path: Path,
+    save_dir: Path,
+    token: str,
+    model_version: str,
+    verbose: bool,
+) -> dict:
+    """内部函数：处理单次 API 调用。"""
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {token}",
@@ -128,7 +200,7 @@ def parse_single_pdf(
     _log(verbose, f"[上传] {pdf_path.name}")
     try:
         with open(pdf_path, "rb") as f:
-            up_resp = requests.put(upload_url, data=f, headers={"Content-Type": ""}, timeout=120)
+            up_resp = requests.put(upload_url, data=f, headers={"Content-Type": ""}, timeout=300)
         if up_resp.status_code not in (200, 204):
             return {
                 "pdf_name": pdf_path.name, "status": "failed",
@@ -186,7 +258,6 @@ def parse_single_pdf(
 
     # 4. 下载 & 解压
     _log(verbose, f"[下载] {pdf_path.name}")
-    save_dir = out_dir / pdf_path.stem
     save_dir.mkdir(parents=True, exist_ok=True)
 
     try:
